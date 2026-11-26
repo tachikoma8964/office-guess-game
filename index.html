@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>辦公室開票猜猜樂</title>
+<style>
+  :root{
+    --bg:#f6f4ee; --card:#fff; --ink:#1d1d1b; --sub:#6b6961; --line:#dedad0;
+    --accent:#0f6e5c; --accent-ink:#fff; --warn:#a4471c; --soft:#e8f1ee;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#151614;--card:#1f211e;--ink:#eeede8;--sub:#a5a49c;--line:#383a35;
+      --accent:#4fbfa4;--accent-ink:#0c1f1a;--warn:#f0955f;--soft:#1d302a}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+  main{max-width:640px;margin:0 auto;padding:24px 16px 64px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.1rem;margin:0 0 12px}
+  p{margin:0 0 12px}
+  .sub{color:var(--sub);font-size:.9rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:16px}
+  nav{display:flex;gap:8px;margin-top:20px}
+  nav button{flex:1}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);
+    background:var(--card);color:var(--ink);padding:10px 14px}
+  button.primary,nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+  button.small{padding:4px 10px;font-size:.85rem}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  label{display:block;font-weight:600;margin:12px 0 4px}
+  input,select,textarea{font:inherit;width:100%;padding:10px 12px;border-radius:8px;
+    border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+  textarea{min-height:90px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .msg{margin:10px 0 0;color:var(--warn);font-size:.92rem;min-height:1.2em;white-space:pre-line}
+  .code{background:var(--soft);border-radius:8px;padding:12px;word-break:break-all;
+    font-family:ui-monospace,Menlo,monospace;font-size:.85rem;margin-top:14px}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-numeric:tabular-nums}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+  tr.win{background:var(--soft)}
+  .winner{background:var(--soft);border-radius:8px;padding:12px;margin-bottom:10px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>辦公室開票猜猜樂</h1>
+  <p class="sub">猜林國漳贏吳宗憲幾票、幾％。純積分同樂，不涉及金錢或獎品。</p>
+
+  <div class="card">
+    <h2>規則</h2>
+    <p>分成「票數差距」和「得票率差距」兩項，<strong>每項 500 分</strong>。</p>
+    <p>各項猜得最接近的人拿走該項積分；一樣接近就平分。</p>
+    <p class="sub">得票率差距＝兩人得票率相減（例如 52.30％ 對 45.10％，差 7.20％）。開票結果以中選會公告為準。覺得會輸的人，可以選「林國漳輸」。</p>
+  </div>
+
+  <nav role="tablist">
+    <button role="tab" id="tab-play" aria-selected="true">我要猜</button>
+    <button role="tab" id="tab-host" aria-selected="false">主辦人專區</button>
+  </nav>
+
+  <section id="play">
+    <form class="card" id="play-form" novalidate>
+      <h2>填寫我的猜測</h2>
+      <p class="sub" id="deadline-note">11/28 下午 4:00 投票截止後就不能再產生代碼。</p>
+      <label for="p-name">暱稱</label>
+      <input id="p-name" maxlength="20" autocomplete="off">
+      <label for="p-side">結果</label>
+      <select id="p-side"><option value="1">林國漳贏</option><option value="-1">林國漳輸</option></select>
+      <div class="row">
+        <div><label for="p-votes">差幾票</label><input id="p-votes" inputmode="numeric" placeholder="例如 12345" autocomplete="off"></div>
+        <div><label for="p-pct">差幾％</label><input id="p-pct" inputmode="decimal" placeholder="例如 5.25" autocomplete="off"></div>
+      </div>
+      <div class="actions"><button class="primary" id="p-submit">產生我的代碼</button></div>
+      <p class="msg" id="p-msg" role="status"></p>
+      <div id="p-result" hidden>
+        <div class="code" id="p-code"></div>
+        <div class="actions"><button type="button" id="p-copy">複製代碼</button></div>
+        <p class="sub">把整段代碼<strong>私訊</strong>給主辦人才算完成。想修改就重新產生一次再傳。</p>
+      </div>
+    </form>
+  </section>
+
+  <section id="host" hidden>
+    <div class="card">
+      <h2>收件</h2>
+      <p class="sub">資料只存在這台裝置的這個瀏覽器，不會上傳。清除瀏覽器資料會一起消失，收完請按「複製備份」。</p>
+      <label for="h-paste">貼上大家傳來的代碼（可以一次貼很多則訊息）</label>
+      <textarea id="h-paste"></textarea>
+      <div class="actions">
+        <button type="button" class="primary" id="h-import">加入名單</button>
+        <button type="button" id="h-backup">複製備份</button>
+      </div>
+      <p class="sub">還原備份：把備份文字貼進上面的框，再按「加入名單」。代填：到「我要猜」幫同事產生代碼，再貼回這裡。</p>
+      <p class="msg" id="h-msg" role="status"></p>
+    </div>
+
+    <div class="card">
+      <h2>名單（<span id="h-count">0</span> 人）</h2>
+      <div class="actions" style="margin:0 0 10px">
+        <button type="button" id="h-toggle">顯示大家的猜測</button>
+        <button type="button" id="h-clear">全部清除</button>
+      </div>
+      <div class="scroll"><table id="h-list"></table></div>
+    </div>
+
+    <form class="card" id="result-form" novalidate>
+      <h2>開票結果</h2>
+      <div class="row">
+        <div><label for="r-lv">林國漳票數</label><input id="r-lv" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="r-lp">林國漳得票率％</label><input id="r-lp" inputmode="decimal" autocomplete="off"></div>
+        <div><label for="r-wv">吳宗憲票數</label><input id="r-wv" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="r-wp">吳宗憲得票率％</label><input id="r-wp" inputmode="decimal" autocomplete="off"></div>
+      </div>
+      <div class="actions"><button class="primary">算出得分</button></div>
+      <p class="msg" id="r-msg" role="status"></p>
+    </form>
+
+    <div class="card" id="score" hidden>
+      <h2>得分</h2>
+      <div id="score-summary"></div>
+      <div class="scroll"><table id="score-table"></table></div>
+      <div class="actions"><button type="button" id="score-copy">複製結果貼到群組</button></div>
+    </div>
+  </section>
+</main>
+<script src="scoring.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
