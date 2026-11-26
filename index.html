@@ -4,132 +4,176 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>辦公室開票猜猜樂</title>
-<style>
-  :root{
-    --bg:#f6f4ee; --card:#fff; --ink:#1d1d1b; --sub:#6b6961; --line:#dedad0;
-    --accent:#0f6e5c; --accent-ink:#fff; --warn:#a4471c; --soft:#e8f1ee;
-  }
-  @media (prefers-color-scheme:dark){
-    :root{--bg:#151614;--card:#1f211e;--ink:#eeede8;--sub:#a5a49c;--line:#383a35;
-      --accent:#4fbfa4;--accent-ink:#0c1f1a;--warn:#f0955f;--soft:#1d302a}
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
-  main{max-width:640px;margin:0 auto;padding:24px 16px 64px}
-  h1{font-size:1.6rem;margin:0 0 4px}
-  h2{font-size:1.1rem;margin:0 0 12px}
-  p{margin:0 0 12px}
-  .sub{color:var(--sub);font-size:.9rem}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:16px}
-  nav{display:flex;gap:8px;margin-top:20px}
-  nav button{flex:1}
-  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);
-    background:var(--card);color:var(--ink);padding:10px 14px}
-  button.primary,nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-  button.small{padding:4px 10px;font-size:.85rem}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  label{display:block;font-weight:600;margin:12px 0 4px}
-  input,select,textarea{font:inherit;width:100%;padding:10px 12px;border-radius:8px;
-    border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-  textarea{min-height:90px}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-  .msg{margin:10px 0 0;color:var(--warn);font-size:.92rem;min-height:1.2em;white-space:pre-line}
-  .code{background:var(--soft);border-radius:8px;padding:12px;word-break:break-all;
-    font-family:ui-monospace,Menlo,monospace;font-size:.85rem;margin-top:14px}
-  .scroll{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-numeric:tabular-nums}
-  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
-  tr.win{background:var(--soft)}
-  .winner{background:var(--soft);border-radius:8px;padding:12px;margin-bottom:10px}
-  [hidden]{display:none!important}
-</style>
+<title>開票猜猜樂｜辦公室猜票小遊戲</title>
+<meta name="description" content="辦公室同樂的開票猜猜樂：猜差幾票、差幾％，純積分，不涉及金錢或獎品。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main>
-  <h1>辦公室開票猜猜樂</h1>
-  <p class="sub">猜林國漳贏吳宗憲幾票、幾％。純積分同樂，不涉及金錢或獎品。</p>
 
-  <div class="card">
-    <h2>規則</h2>
-    <p>分成「票數差距」和「得票率差距」兩項，<strong>每項 500 分</strong>。</p>
-    <p>各項猜得最接近的人拿走該項積分；一樣接近就平分。</p>
-    <p class="sub">得票率差距＝兩人得票率相減（例如 52.30％ 對 45.10％，差 7.20％）。開票結果以中選會公告為準。覺得會輸的人，可以選「林國漳輸」。</p>
-  </div>
-
-  <nav role="tablist">
-    <button role="tab" id="tab-play" aria-selected="true">我要猜</button>
-    <button role="tab" id="tab-host" aria-selected="false">主辦人專區</button>
-  </nav>
-
-  <section id="play">
-    <form class="card" id="play-form" novalidate>
-      <h2>填寫我的猜測</h2>
-      <p class="sub" id="deadline-note">11/28 下午 4:00 投票截止後就不能再產生代碼。</p>
-      <label for="p-name">暱稱</label>
-      <input id="p-name" maxlength="20" autocomplete="off">
-      <label for="p-side">結果</label>
-      <select id="p-side"><option value="1">林國漳贏</option><option value="-1">林國漳輸</option></select>
-      <div class="row">
-        <div><label for="p-votes">差幾票</label><input id="p-votes" inputmode="numeric" placeholder="例如 12345" autocomplete="off"></div>
-        <div><label for="p-pct">差幾％</label><input id="p-pct" inputmode="decimal" placeholder="例如 5.25" autocomplete="off"></div>
-      </div>
-      <div class="actions"><button class="primary" id="p-submit">產生我的代碼</button></div>
-      <p class="msg" id="p-msg" role="status"></p>
-      <div id="p-result" hidden>
-        <div class="code" id="p-code"></div>
-        <div class="actions"><button type="button" id="p-copy">複製代碼</button></div>
-        <p class="sub">把整段代碼<strong>私訊</strong>給主辦人才算完成。想修改就重新產生一次再傳。</p>
-      </div>
-    </form>
-  </section>
-
-  <section id="host" hidden>
+<div id="play">
+  <header class="hero">
+    <img class="hero__photo" src="assets/toucheng-coast.jpg" width="1024" height="684" alt="頭城海岸，遠方海面上是龜山島" fetchpriority="high">
     <div class="card">
-      <h2>收件</h2>
-      <p class="sub">資料只存在這台裝置的這個瀏覽器，不會上傳。清除瀏覽器資料會一起消失，收完請按「複製備份」。</p>
+      <h1><span>開票</span><span>猜猜樂</span></h1>
+      <ul class="card__facts">
+        <li>11/28 下午 4:00 截止</li>
+        <li>兩項，各 500 分</li>
+        <li>純積分，不碰錢</li>
+      </ul>
+      <p class="card__line">辦公室猜票小遊戲<br>猜林國漳贏吳宗憲幾票、幾％<br>最接近的人拿走積分</p>
+      <div class="card__foot">
+        <a class="button" href="#guess">我要猜</a>
+        <a class="textlink" href="#host">主辦人專區</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="how" aria-labelledby="how-title">
+      <div class="how__intro reveal">
+        <h2 id="how-title">怎麼玩</h2>
+        <p>填一張猜票單，撕下存根私訊給主辦人。開票後主辦人一貼，誰最準馬上算出來。</p>
+        <figure class="reveal">
+          <img src="assets/wushi-harbor.jpg" width="1024" height="685" alt="烏石港的紅色燈塔，遠方是龜山島" loading="lazy">
+          <figcaption>烏石港</figcaption>
+        </figure>
+      </div>
+      <div class="slip reveal">
+        <h3 class="reveal">開票前</h3>
+        <ul>
+          <li><span>填暱稱和兩個數字</span><i></i><span>1 分鐘</span></li>
+          <li><span>撕下存根，私訊主辦人</span><i></i><span>16:00 前</span></li>
+        </ul>
+        <h3 class="reveal">開票後</h3>
+        <ul>
+          <li><span>以中選會公告為準</span><i></i><span>輸入結果</span></li>
+          <li><span>票數差距最接近</span><i></i><span>500 分</span></li>
+          <li><span>得票率差距最接近</span><i></i><span>500 分</span></li>
+        </ul>
+        <p class="slip__note reveal">得票率差距是兩人得票率相減。例如 52.30％ 對 45.10％，差 7.20％。</p>
+        <p class="slip__total reveal"><span>兩項都最準</span><span>1,000 分</span></p>
+      </div>
+    </section>
+
+    <section class="guess" id="guess" aria-labelledby="guess-title">
+      <h2 id="guess-title" class="reveal">我的猜票單</h2>
+      <div class="ticket reveal">
+        <form class="ticket__form" id="play-form" novalidate>
+          <label for="p-name">暱稱</label>
+          <input id="p-name" maxlength="20" autocomplete="off">
+          <fieldset>
+            <legend>你覺得林國漳會</legend>
+            <div class="choice">
+              <label><input type="radio" name="side" value="1" checked><span>贏</span></label>
+              <label><input type="radio" name="side" value="-1"><span>輸</span></label>
+            </div>
+          </fieldset>
+          <div class="pair">
+            <div><label for="p-votes">差幾票</label><input id="p-votes" inputmode="numeric" autocomplete="off"></div>
+            <div><label for="p-pct">差幾％</label><input id="p-pct" inputmode="decimal" autocomplete="off"></div>
+          </div>
+          <button class="button" id="p-submit">撕下存根</button>
+          <p class="note" id="deadline-note">11/28 下午 4:00 投票截止後就不能再撕存根。</p>
+          <p class="msg" id="p-msg" role="status"></p>
+        </form>
+
+        <div class="stub" id="stub">
+          <p class="stub__name" id="s-name">你的暱稱</p>
+          <p class="stub__side">猜林國漳<b id="s-side">贏</b></p>
+          <p class="stub__num"><b id="s-votes">？</b><span>票</span></p>
+          <p class="stub__num"><b id="s-pct">？</b><span>％</span></p>
+          <div id="p-result" hidden>
+            <p class="stub__code" id="p-code"></p>
+            <button type="button" class="button button--light" id="p-copy">複製代碼</button>
+            <p>把整段代碼<strong>私訊</strong>給主辦人才算完成。要修改就重撕一張再傳。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="prizes" aria-labelledby="prizes-title">
+      <img class="prizes__photo" src="assets/guishan-lake.jpg" width="1600" height="1200" alt="龜山島的山壁與龜尾湖" loading="lazy">
+      <div class="prizes__text reveal">
+        <h2 id="prizes-title">一樣準，就平分</h2>
+        <p>兩項分開比。往上猜或往下猜都沒關係，只看誰離結果最近。</p>
+      </div>
+      <ul class="slips">
+        <li class="reveal"><strong>一人最準</strong><span>該項 500 分全拿</span></li>
+        <li class="reveal"><strong>兩人一樣近</strong><span>每人 250 分</span></li>
+        <li class="reveal"><strong>四人一樣近</strong><span>每人 125 分</span></li>
+        <li class="reveal"><strong>差 300 票</strong><span>多猜 300 和少猜 300 一樣近</span></li>
+        <li class="reveal"><strong>兩項都最準</strong><span>一個人拿 1,000 分</span></li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<div id="host" hidden>
+  <header class="hostbar">
+    <img src="assets/guishan-sea.jpg" width="1920" height="1325" alt="從頭城望向海上的龜山島">
+    <div>
+      <h2 id="host-title" tabindex="-1">主辦人專區</h2>
+      <a class="button button--light" href="#top">回猜票頁</a>
+    </div>
+  </header>
+  <main class="desk">
+    <section class="panel" aria-labelledby="in-title">
+      <h3 id="in-title">收件</h3>
+      <p>資料只存在這台裝置的這個瀏覽器，不會上傳。清除瀏覽器資料會一起消失，收完請按「複製備份」。</p>
       <label for="h-paste">貼上大家傳來的代碼（可以一次貼很多則訊息）</label>
       <textarea id="h-paste"></textarea>
       <div class="actions">
-        <button type="button" class="primary" id="h-import">加入名單</button>
-        <button type="button" id="h-backup">複製備份</button>
+        <button type="button" class="button" id="h-import">加入名單</button>
+        <button type="button" class="button button--quiet" id="h-backup">複製備份</button>
       </div>
-      <p class="sub">還原備份：把備份文字貼進上面的框，再按「加入名單」。代填：到「我要猜」幫同事產生代碼，再貼回這裡。</p>
+      <p class="note">還原備份：把備份文字貼進上面的框，再按「加入名單」。代填：回猜票頁幫同事撕存根，再貼回這裡。</p>
       <p class="msg" id="h-msg" role="status"></p>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>名單（<span id="h-count">0</span> 人）</h2>
-      <div class="actions" style="margin:0 0 10px">
-        <button type="button" id="h-toggle">顯示大家的猜測</button>
-        <button type="button" id="h-clear">全部清除</button>
+    <section class="panel" aria-labelledby="list-title">
+      <h3 id="list-title">名單（<span id="h-count">0</span> 人）</h3>
+      <div class="actions">
+        <button type="button" class="button button--quiet" id="h-toggle">顯示大家的猜測</button>
+        <button type="button" class="button button--quiet" id="h-clear">全部清除</button>
       </div>
       <div class="scroll"><table id="h-list"></table></div>
-    </div>
+    </section>
 
-    <form class="card" id="result-form" novalidate>
-      <h2>開票結果</h2>
-      <div class="row">
-        <div><label for="r-lv">林國漳票數</label><input id="r-lv" inputmode="numeric" autocomplete="off"></div>
-        <div><label for="r-lp">林國漳得票率％</label><input id="r-lp" inputmode="decimal" autocomplete="off"></div>
-        <div><label for="r-wv">吳宗憲票數</label><input id="r-wv" inputmode="numeric" autocomplete="off"></div>
-        <div><label for="r-wp">吳宗憲得票率％</label><input id="r-wp" inputmode="decimal" autocomplete="off"></div>
-      </div>
-      <div class="actions"><button class="primary">算出得分</button></div>
-      <p class="msg" id="r-msg" role="status"></p>
-    </form>
+    <section class="panel panel--wide" aria-labelledby="result-title">
+      <h3 id="result-title">開票結果</h3>
+      <form id="result-form" novalidate>
+        <div class="results">
+          <div><label for="r-lv">林國漳票數</label><input id="r-lv" inputmode="numeric" autocomplete="off"></div>
+          <div><label for="r-lp">林國漳得票率％</label><input id="r-lp" inputmode="decimal" autocomplete="off"></div>
+          <div><label for="r-wv">吳宗憲票數</label><input id="r-wv" inputmode="numeric" autocomplete="off"></div>
+          <div><label for="r-wp">吳宗憲得票率％</label><input id="r-wp" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="actions"><button class="button">算出得分</button></div>
+        <p class="msg" id="r-msg" role="status"></p>
+      </form>
+    </section>
 
-    <div class="card" id="score" hidden>
-      <h2>得分</h2>
+    <section class="panel panel--wide" id="score" hidden aria-labelledby="score-title">
+      <h3 id="score-title">得分</h3>
       <div id="score-summary"></div>
       <div class="scroll"><table id="score-table"></table></div>
-      <div class="actions"><button type="button" id="score-copy">複製結果貼到群組</button></div>
-    </div>
-  </section>
-</main>
+      <div class="actions"><button type="button" class="button" id="score-copy">複製結果貼到群組</button></div>
+    </section>
+  </main>
+</div>
+
+<footer class="back">
+  <img src="assets/matcha-mountain.jpg" width="1024" height="576" alt="雲霧下的宜蘭抹茶山山谷" loading="lazy">
+  <div class="back__text">
+    <p class="back__name reveal">開票猜猜樂</p>
+    <p>辦公室自己玩的小遊戲。只算積分，不涉及任何金錢、飲料或獎品。投票結束前，請不要公開大家的猜測或統計。</p>
+    <p class="credits">照片：<a href="https://www.flickr.com/photos/124612017@N06/46391078902">頭城濱海</a>，chunchun14，<a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a>；<a href="https://www.flickr.com/photos/72922885@N00/11578120836">烏石港</a>，focusc，<a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a>；<a href="https://commons.wikimedia.org/w/index.php?curid=177981023">Guishan Island, Yilan</a>，PP Xuan，<a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</a>；<a href="https://commons.wikimedia.org/wiki/File:Guishan_Island_from_Toucheng.jpg">Guishan Island from Toucheng</a>，Ma7ged，<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>；<a href="https://www.flickr.com/photos/193353181@N06/51298543886">Matcha Mountain in Yilan</a>，midnightbreakfastcafe，<a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a>。照片經裁切與調整明暗。</p>
+  </div>
+</footer>
+
 <script src="scoring.js"></script>
 <script src="app.js"></script>
 </body>

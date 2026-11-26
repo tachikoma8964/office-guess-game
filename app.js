@@ -34,21 +34,59 @@
     }
   }
 
-  // 分頁
-  for (const name of ['play', 'host']) {
-    $('tab-' + name).addEventListener('click', () => {
-      for (const other of ['play', 'host']) {
-        $(other).hidden = other !== name;
-        $('tab-' + other).setAttribute('aria-selected', String(other === name));
-      }
-    });
+  // 兩個畫面：猜票頁與主辦人專區（#host）
+  function route() {
+    const host = location.hash === '#host';
+    const switched = $('host').hidden === host;
+    $('host').hidden = !host;
+    $('play').hidden = host;
+    if (!switched) return;
+    if (host) { window.scrollTo(0, 0); $('host-title').focus({ preventScroll: true }); }
+    else {
+      const target = document.getElementById(location.hash.slice(1));
+      if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
+    }
+  }
+  window.addEventListener('hashchange', route);
+  route();
+
+  // 進場動畫
+  if ('IntersectionObserver' in window) {
+    document.documentElement.classList.add('js');
+    const io = new IntersectionObserver(entries => {
+      entries.filter(e => e.isIntersecting).forEach((e, i) => {
+        e.target.style.transitionDelay = (i * 80) + 'ms';
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  }
+
+  // 存根隨填寫即時更新
+  const chosenSide = () => Number(document.querySelector('input[name="side"]:checked').value);
+  function print(id, text) {
+    const el = $(id);
+    if (el.textContent === text) return;
+    el.textContent = text;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+  function renderStub() {
+    const v = S.parseVotes($('p-votes').value);
+    const p = S.parsePct($('p-pct').value);
+    print('s-name', $('p-name').value.trim() || '你的暱稱');
+    print('s-side', chosenSide() > 0 ? '贏' : '輸');
+    print('s-votes', v === null ? '？' : num(v));
+    print('s-pct', p === null ? '？' : (p / 100).toFixed(2));
   }
 
   // 我要猜
   function checkDeadline() {
     const closed = Date.now() >= DEADLINE;
     $('p-submit').disabled = closed;
-    if (closed) $('deadline-note').textContent = '投票已截止，不能再產生新的代碼。';
+    if (closed) $('deadline-note').textContent = '投票已截止，不能再撕新的存根。';
     return closed;
   }
   checkDeadline();
@@ -63,13 +101,21 @@
     if (!name) { $('p-msg').textContent = '請填暱稱。'; return; }
     if (v === null) { $('p-msg').textContent = '票數請填整數，例如 12345。'; return; }
     if (p === null) { $('p-msg').textContent = '％請填 0 到 100，最多兩位小數，例如 5.25。'; return; }
-    const sign = Number($('p-side').value);
+    const sign = chosenSide();
     $('p-code').textContent = S.encode({ n: name, v: sign * v, p: sign * p, t: Date.now() });
     $('p-result').hidden = false;
+    $('stub').classList.add('torn');
+    $('stub').scrollIntoView({ block: 'nearest' });
     $('p-msg').textContent = `你猜：林國漳${votesText(sign * v)}、${pctText(sign * p)}`;
   });
   // 改了內容就把舊代碼收起來，避免傳到舊的
-  $('play-form').addEventListener('input', () => { $('p-result').hidden = true; $('p-msg').textContent = ''; });
+  $('play-form').addEventListener('input', () => {
+    $('p-result').hidden = true;
+    $('stub').classList.remove('torn');
+    $('p-msg').textContent = '';
+    renderStub();
+  });
+  renderStub();
   $('p-copy').addEventListener('click', () => copy($('p-code').textContent, $('p-msg')));
 
   // 主辦人
