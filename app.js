@@ -5,8 +5,7 @@
   const $ = id => document.getElementById(id);
 
   let guesses = load();
-  let revealed = false;
-  let resultText = '';
+  let actual = null; // 開票結果，填了才顯示分數
 
   function load() {
     try {
@@ -20,213 +19,99 @@
   }
 
   const num = n => n.toLocaleString('zh-TW', { maximumFractionDigits: 2 });
-  const pct = p => (Math.abs(p) / 100).toFixed(2) + '％';
   const side = x => (x > 0 ? '贏 ' : x < 0 ? '輸 ' : '平手 ');
   const votesText = v => side(v) + num(Math.abs(v)) + ' 票';
-  const pctText = p => side(p) + pct(p);
+  const pctText = p => side(p) + (Math.abs(p) / 100).toFixed(2) + '％';
 
-  async function copy(text, msgEl) {
-    try {
-      await navigator.clipboard.writeText(text);
-      msgEl.textContent = '已複製。';
-    } catch (e) {
-      window.prompt('無法自動複製，請手動複製下面的文字：', text);
-    }
-  }
-
-  // 兩個畫面：猜票頁與主辦人專區（#host）
-  function route() {
-    const host = location.hash === '#host';
-    const switched = $('host').hidden === host;
-    $('host').hidden = !host;
-    $('play').hidden = host;
-    if (!switched) return;
-    if (host) { window.scrollTo(0, 0); $('host-title').focus({ preventScroll: true }); }
-    else {
-      const target = document.getElementById(location.hash.slice(1));
-      if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
-    }
-  }
-  window.addEventListener('hashchange', route);
-  route();
-
-  // 進場動畫
-  if ('IntersectionObserver' in window) {
-    document.documentElement.classList.add('js');
-    const io = new IntersectionObserver(entries => {
-      entries.filter(e => e.isIntersecting).forEach((e, i) => {
-        e.target.style.transitionDelay = (i * 80) + 'ms';
-        e.target.classList.add('in');
-        io.unobserve(e.target);
-      });
-    }, { threshold: 0.15 });
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-  }
-
-  // 存根隨填寫即時更新
-  const chosenSide = () => Number(document.querySelector('input[name="side"]:checked').value);
-  function print(id, text) {
-    const el = $(id);
-    if (el.textContent === text) return;
-    el.textContent = text;
-    el.classList.remove('bump');
-    void el.offsetWidth;
-    el.classList.add('bump');
-  }
-  function renderStub() {
-    const v = S.parseVotes($('p-votes').value);
-    const p = S.parsePct($('p-pct').value);
-    print('s-name', $('p-name').value.trim() || '你的暱稱');
-    print('s-side', chosenSide() > 0 ? '贏' : '輸');
-    print('s-votes', v === null ? '？' : num(v));
-    print('s-pct', p === null ? '？' : (p / 100).toFixed(2));
-  }
-
-  // 我要猜
-  function checkDeadline() {
-    const closed = Date.now() >= DEADLINE;
-    $('p-submit').disabled = closed;
-    if (closed) $('deadline-note').textContent = '投票已截止，不能再撕新的存根。';
-    return closed;
-  }
-  checkDeadline();
-
-  $('play-form').addEventListener('submit', e => {
-    e.preventDefault();
-    $('p-result').hidden = true;
-    if (checkDeadline()) return;
-    const name = $('p-name').value.trim();
-    const v = S.parseVotes($('p-votes').value);
-    const p = S.parsePct($('p-pct').value);
-    if (!name) { $('p-msg').textContent = '請填暱稱。'; return; }
-    if (v === null) { $('p-msg').textContent = '票數請填整數，例如 12345。'; return; }
-    if (p === null) { $('p-msg').textContent = '％請填 0 到 100，最多兩位小數，例如 5.25。'; return; }
-    const sign = chosenSide();
-    $('p-code').textContent = S.encode({ n: name, v: sign * v, p: sign * p, t: Date.now() });
-    $('p-result').hidden = false;
-    $('stub').classList.add('torn');
-    $('stub').scrollIntoView({ block: 'nearest' });
-    $('p-msg').textContent = `你猜：林國漳${votesText(sign * v)}、${pctText(sign * p)}`;
-  });
-  // 改了內容就把舊代碼收起來，避免傳到舊的
-  $('play-form').addEventListener('input', () => {
-    $('p-result').hidden = true;
-    $('stub').classList.remove('torn');
-    $('p-msg').textContent = '';
-    renderStub();
-  });
-  renderStub();
-  $('p-copy').addEventListener('click', () => copy($('p-code').textContent, $('p-msg')));
-
-  // 主辦人
-  function fillTable(table, head, rows) {
+  function render() {
+    const scored = actual && guesses.length ? S.score(guesses, actual) : null;
+    const rows = scored ? scored.rows : guesses;
+    const table = $('list');
     table.replaceChildren();
-    [head, ...rows.map(r => r.cells)].forEach((cells, i) => {
-      const tr = table.insertRow();
-      if (i && rows[i - 1].win) tr.className = 'win';
-      for (const c of cells) {
-        const cell = document.createElement(i ? 'td' : 'th');
-        if (c instanceof Node) cell.append(c); else cell.textContent = c;
-        tr.append(cell);
-      }
-    });
-  }
+    $('empty').hidden = rows.length > 0;
+    $('list-box').hidden = $('clear').hidden = rows.length === 0;
+    if (!rows.length) return;
 
-  function renderList() {
-    $('h-count').textContent = guesses.length;
-    $('h-toggle').textContent = revealed ? '隱藏大家的猜測' : '顯示大家的猜測';
-    const rows = guesses.map(g => {
+    const head = table.insertRow();
+    for (const text of ['名字', '票數', '％', scored ? '得分' : '']) {
+      const th = document.createElement('th');
+      th.textContent = text;
+      head.append(th);
+    }
+    for (const g of rows) {
+      const tr = table.insertRow();
+      for (const text of [g.n, votesText(g.v), pctText(g.p)]) tr.insertCell().textContent = text;
+      const last = tr.insertCell();
+      if (scored) {
+        last.textContent = num(g.total);
+        if (g.total > 0) tr.className = 'win';
+        continue;
+      }
       const del = document.createElement('button');
       del.type = 'button';
-      del.className = 'small';
+      del.className = 'link';
       del.textContent = '刪除';
       del.addEventListener('click', () => {
-        if (!confirm(`要刪除「${g.n}」的猜測嗎？`)) return;
+        if (!confirm(`要刪除「${g.n}」嗎？`)) return;
         guesses = guesses.filter(x => x.n !== g.n);
-        changed();
+        save();
+        render();
       });
-      const late = g.t >= DEADLINE ? '（截止後）' : '';
-      return { cells: [
-        g.n + late,
-        revealed ? votesText(g.v) : '＊＊＊',
-        revealed ? pctText(g.p) : '＊＊＊',
-        del
-      ] };
-    });
-    fillTable($('h-list'), ['暱稱', '票數差距', '得票率差距', ''], rows);
-  }
-
-  function changed() {
-    const ok = save();
-    $('score').hidden = true;
-    renderList();
-    return ok;
-  }
-
-  $('h-import').addEventListener('click', () => {
-    const { guesses: found, bad } = S.decodeAll($('h-paste').value);
-    if (!found.length) {
-      $('h-msg').textContent = bad ? '代碼不完整，請對方重新複製整段再傳一次。' : '沒有找到代碼（代碼開頭是 GUESS:）。';
-      return;
+      last.append(del);
     }
-    guesses = S.merge(guesses, found);
-    const ok = changed();
-    const names = [...new Set(found.map(g => g.n))];
-    let text = `已處理 ${names.join('、')}。同一暱稱只保留最新的一筆。`;
-    if (bad) text += `\n另有 ${bad} 段代碼讀不出來，請重傳。`;
-    if (!ok) text += '\n這個瀏覽器無法儲存資料，關掉頁面就會消失，請先按「複製備份」。';
-    $('h-msg').textContent = text;
-    $('h-paste').value = '';
+  }
+
+  function checkDeadline() {
+    const closed = Date.now() >= DEADLINE;
+    $('submit').disabled = closed;
+    if (closed) $('msg').textContent = '投票已截止，不能再猜了。';
+    return closed;
+  }
+
+  $('guess-form').addEventListener('submit', e => {
+    e.preventDefault();
+    if (checkDeadline()) return;
+    const name = $('name').value.trim();
+    const v = S.parseVotes($('votes').value);
+    const p = S.parsePct($('pct').value);
+    const msg = $('msg');
+    if (!name) { msg.textContent = '請填名字。'; return; }
+    if (v === null) { msg.textContent = '票數請填整數，例如 12345。'; return; }
+    if (p === null) { msg.textContent = '％請填 0 到 100，最多兩位小數。'; return; }
+    if (guesses.some(g => g.n === name) && !confirm(`「${name}」已經猜過了，要改成這次的嗎？`)) return;
+    const sign = Number(document.querySelector('input[name="side"]:checked').value);
+    guesses = [...guesses.filter(g => g.n !== name), { n: name, v: sign * v, p: sign * p, t: Date.now() }];
+    const ok = save();
+    e.target.reset();
+    msg.textContent = ok ? `${name} 送出了。` : '送出了，但這個瀏覽器無法儲存，關掉頁面就會消失。';
+    render();
   });
 
-  $('h-backup').addEventListener('click', () => {
-    if (!guesses.length) { $('h-msg').textContent = '名單是空的。'; return; }
-    copy(guesses.map(S.encode).join('\n'), $('h-msg'));
-  });
-  $('h-toggle').addEventListener('click', () => { revealed = !revealed; renderList(); });
-  $('h-clear').addEventListener('click', () => {
-    if (!guesses.length || !confirm(`要清除全部 ${guesses.length} 人的猜測嗎？清掉就救不回來。`)) return;
+  $('clear').addEventListener('click', () => {
+    if (!confirm(`要清除全部 ${guesses.length} 人嗎？清掉就救不回來。`)) return;
     guesses = [];
-    changed();
+    save();
+    render();
   });
 
-  $('result-form').addEventListener('input', () => { $('score').hidden = true; });
+  $('result-form').addEventListener('input', () => { actual = null; $('r-msg').textContent = ''; render(); });
   $('result-form').addEventListener('submit', e => {
     e.preventDefault();
-    $('score').hidden = true;
     const lv = S.parseVotes($('r-lv').value), wv = S.parseVotes($('r-wv').value);
     const lp = S.parsePct($('r-lp').value), wp = S.parsePct($('r-wp').value);
     const msg = $('r-msg');
-    if ([lv, wv, lp, wp].includes(null)) { msg.textContent = '四格都要填：票數填整數，％最多兩位小數。'; return; }
-    if (lp + wp > 10000) { msg.textContent = '兩人得票率加起來超過 100％，請檢查。'; return; }
-    if (Math.sign(lv - wv) !== Math.sign(lp - wp)) { msg.textContent = '票數和得票率的高低對不起來，請檢查。'; return; }
-    if (!guesses.length) { msg.textContent = '名單裡還沒有人。'; return; }
-    msg.textContent = '';
-    showScore({ v: lv - wv, p: lp - wp });
+    actual = null;
+    if ([lv, wv, lp, wp].includes(null)) msg.textContent = '四格都要填：票數填整數，％最多兩位小數。';
+    else if (lp + wp > 10000) msg.textContent = '兩人得票率加起來超過 100％，請檢查。';
+    else if (Math.sign(lv - wv) !== Math.sign(lp - wp)) msg.textContent = '票數和得票率的高低對不起來，請檢查。';
+    else if (!guesses.length) msg.textContent = '還沒有人猜。';
+    else {
+      actual = { v: lv - wv, p: lp - wp };
+      msg.textContent = `結果：林國漳${votesText(actual.v)}、${pctText(actual.p)}。分數已列在上面的名單。`;
+    }
+    render();
   });
 
-  function showScore(actual) {
-    const { winV, winP, rows } = S.score(guesses, actual);
-    const lines = [
-      `實際結果：林國漳${votesText(actual.v)}、${pctText(actual.p)}`,
-      `票數差距最準：${winV.join('、')}（每人 ${num(S.POT / winV.length)} 分）`,
-      `得票率差距最準：${winP.join('、')}（每人 ${num(S.POT / winP.length)} 分）`
-    ];
-    $('score-summary').replaceChildren(...lines.map(t => {
-      const p = document.createElement('p');
-      p.className = 'winner';
-      p.textContent = t;
-      return p;
-    }));
-    fillTable($('score-table'), ['暱稱', '猜票數', '差', '猜％', '差', '得分'], rows.map(r => ({
-      win: r.total > 0,
-      cells: [r.n, votesText(r.v), num(r.dv), pctText(r.p), pct(r.dp), num(r.total)]
-    })));
-    resultText = ['【開票猜猜樂結果】', ...lines, '', ...rows.map(r =>
-      `${r.n}：猜${votesText(r.v)}、${pctText(r.p)} → ${num(r.total)} 分`)].join('\n');
-    $('score').hidden = false;
-  }
-  $('score-copy').addEventListener('click', () => copy(resultText, $('r-msg')));
-
-  renderList();
+  checkDeadline();
+  render();
 })();

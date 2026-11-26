@@ -1,7 +1,6 @@
-// 計分與代碼處理。百分比一律用「百分之一％」的整數儲存，避免小數誤差造成同分判斷錯誤。
+// 計分與輸入處理。百分比一律用「百分之一％」的整數儲存，避免小數誤差造成同分判斷錯誤。
 (function (root) {
   const POT = 500;
-  const PREFIX = 'GUESS:';
 
   // 接受全形數字與千分位逗號
   function clean(text) {
@@ -27,35 +26,6 @@
       Number.isFinite(g.t);
   }
 
-  function encode(g) {
-    const bytes = new TextEncoder().encode(JSON.stringify([g.n, g.v, g.p, g.t]));
-    return PREFIX + btoa(String.fromCharCode(...bytes));
-  }
-
-  function decodeAll(text) {
-    const guesses = [];
-    let bad = 0;
-    for (const m of String(text).matchAll(/GUESS:([A-Za-z0-9+/=]*)/g)) {
-      try {
-        const bytes = Uint8Array.from(atob(m[1]), c => c.charCodeAt(0));
-        const [n, v, p, t] = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-        const g = { n, v, p, t };
-        if (validGuess(g)) guesses.push(g); else bad++;
-      } catch (e) { bad++; }
-    }
-    return { guesses, bad };
-  }
-
-  // 同一暱稱只留最新產生的那一筆
-  function merge(list, incoming) {
-    const map = new Map(list.map(g => [g.n, g]));
-    for (const g of incoming) {
-      const old = map.get(g.n);
-      if (!old || g.t >= old.t) map.set(g.n, g);
-    }
-    return [...map.values()];
-  }
-
   function closest(guesses, key, actual) {
     if (!guesses.length) return [];
     const best = Math.min(...guesses.map(g => Math.abs(g[key] - actual)));
@@ -74,7 +44,7 @@
     return { winV, winP, rows };
   }
 
-  const api = { POT, parseVotes, parsePct, validGuess, encode, decodeAll, merge, score };
+  const api = { POT, parseVotes, parsePct, validGuess, score };
   if (typeof module !== 'undefined') module.exports = api;
   else root.Scoring = api;
 })(this);
