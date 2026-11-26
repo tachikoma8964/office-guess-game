@@ -19,10 +19,20 @@
     return v <= 10000 ? v : null;
   }
 
+  // 四個猜測項目：lv/wv 是得票數，lp/wp 是得票率（百分之一％的整數）
+  const ITEMS = [
+    { key: 'lv', label: '林國漳得票數' },
+    { key: 'lp', label: '林國漳得票率' },
+    { key: 'wv', label: '吳宗憲得票數' },
+    { key: 'wp', label: '吳宗憲得票率' }
+  ];
+
+  const isVotes = v => Number.isInteger(v) && v >= 0 && v <= 9999999;
+  const isPct = p => Number.isInteger(p) && p >= 0 && p <= 10000;
+
   function validGuess(g) {
     return !!g && typeof g.n === 'string' && g.n.trim() !== '' && g.n.length <= 20 &&
-      Number.isInteger(g.v) && Math.abs(g.v) <= 9999999 &&
-      Number.isInteger(g.p) && Math.abs(g.p) <= 10000 &&
+      isVotes(g.lv) && isVotes(g.wv) && isPct(g.lp) && isPct(g.wp) && g.lp + g.wp <= 10000 &&
       Number.isFinite(g.t);
   }
 
@@ -33,15 +43,13 @@
   }
 
   function score(guesses, actual) {
-    const winV = closest(guesses, 'v', actual.v);
-    const winP = closest(guesses, 'p', actual.p);
-    const rows = guesses.map(g => {
-      const sv = winV.includes(g.n) ? POT / winV.length : 0;
-      const sp = winP.includes(g.n) ? POT / winP.length : 0;
-      return { ...g, dv: Math.abs(g.v - actual.v), dp: Math.abs(g.p - actual.p), sv, sp, total: sv + sp };
-    });
-    rows.sort((a, b) => b.total - a.total || a.dp - b.dp || a.dv - b.dv);
-    return { winV, winP, rows };
+    const items = ITEMS.map(item => ({ ...item, winners: closest(guesses, item.key, actual[item.key]) }));
+    const rows = guesses.map(g => ({
+      ...g,
+      total: items.reduce((sum, item) => sum + (item.winners.includes(g.n) ? POT / item.winners.length : 0), 0)
+    }));
+    rows.sort((a, b) => b.total - a.total);
+    return { items, rows };
   }
 
   const api = { POT, parseVotes, parsePct, validGuess, score };

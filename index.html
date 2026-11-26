@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <header class="top">
@@ -29,22 +29,25 @@
 </header>
 
 <main>
-  <p class="intro">猜林國漳贏吳宗憲幾票、幾％。兩項各 500 分，最接近的人拿走，一樣近就平分。</p>
+  <p class="intro">猜林國漳和吳宗憲的得票數、得票率。共 4 項，每項 500 分，最接近的人拿走，一樣近就平分。</p>
 
   <form class="box" id="guess-form" novalidate>
     <label for="name">名字</label>
     <input id="name" maxlength="20" autocomplete="off">
     <fieldset>
-      <legend>林國漳會</legend>
-      <div class="choice">
-        <label><input type="radio" name="side" value="1" checked><span>贏</span></label>
-        <label><input type="radio" name="side" value="-1"><span>輸</span></label>
+      <legend>林國漳</legend>
+      <div class="pair">
+        <div><label for="lv">得票數</label><input id="lv" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="lp">得票率％</label><input id="lp" inputmode="decimal" autocomplete="off"></div>
       </div>
     </fieldset>
-    <div class="pair">
-      <div><label for="votes">差幾票</label><input id="votes" inputmode="numeric" autocomplete="off"></div>
-      <div><label for="pct">差幾％</label><input id="pct" inputmode="decimal" autocomplete="off"></div>
-    </div>
+    <fieldset>
+      <legend>吳宗憲</legend>
+      <div class="pair">
+        <div><label for="wv">得票數</label><input id="wv" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="wp">得票率％</label><input id="wp" inputmode="decimal" autocomplete="off"></div>
+      </div>
+    </fieldset>
     <button class="button" id="submit">送出</button>
     <p class="msg" id="msg" role="status"></p>
   </form>
@@ -60,9 +63,9 @@
     <summary>開票了，算分數</summary>
     <form class="box" id="result-form" novalidate>
       <div class="pair">
-        <div><label for="r-lv">林國漳票數</label><input id="r-lv" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="r-lv">林國漳得票數</label><input id="r-lv" inputmode="numeric" autocomplete="off"></div>
         <div><label for="r-lp">林國漳得票率％</label><input id="r-lp" inputmode="decimal" autocomplete="off"></div>
-        <div><label for="r-wv">吳宗憲票數</label><input id="r-wv" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="r-wv">吳宗憲得票數</label><input id="r-wv" inputmode="numeric" autocomplete="off"></div>
         <div><label for="r-wp">吳宗憲得票率％</label><input id="r-wp" inputmode="decimal" autocomplete="off"></div>
       </div>
       <button class="button">算分數</button>
@@ -75,7 +78,7 @@
   <p>辦公室同樂，只算積分，不碰錢和獎品。資料只存在這台裝置的瀏覽器。</p>
 </footer>
 
-<script src="scoring.js"></script>
-<script src="app.js"></script>
+<script src="scoring.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
